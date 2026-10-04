@@ -1,58 +1,73 @@
 pipeline {
     agent any
-
     triggers {
-        pollSCM('* * * * *')
+        pollSCM('H/5 * * * *')
     }
-
+    environment {
+        EMAIL = 'lingalasiri04@gmail.com'
+    }
     stages {
         stage('Build') {
             steps {
-                echo "Commit under test: ${env.GIT_COMMIT}"
-                echo 'Task: Compile the source code and package it into a deployable artefact (JAR).'
-                echo 'Tool: Apache Maven (mvn clean package)'
+                echo 'Task: Compile and package the code'
+                echo 'Tool: Maven'
             }
         }
         stage('Unit and Integration Tests') {
             steps {
-                echo 'Task: Run unit tests to check each component works, then integration tests to check components work together.'
-                echo 'Tools: JUnit 5 (unit), Mockito (mocking), Testcontainers (integration)'
+                echo 'Task: Run unit tests and integration tests'
+                echo 'Tool: JUnit (unit), Selenium (integration)'
+            }
+            post {
+                always {
+                    emailext(
+                        to: "${EMAIL}",
+                        subject: "Unit and Integration Tests: ${currentBuild.currentResult}",
+                        body: "The Unit and Integration Tests stage finished with status: ${currentBuild.currentResult}. Log attached.",
+                        attachLog: true
+                    )
+                }
             }
         }
         stage('Code Analysis') {
             steps {
-                echo 'Task: Analyse code for bugs, code smells, duplication and coverage against industry standards.'
-                echo 'Tool: SonarQube (SonarScanner for Jenkins) with a quality gate'
+                echo 'Task: Analyse code quality against industry standards'
+                echo 'Tool: SonarQube'
             }
         }
         stage('Security Scan') {
             steps {
-                echo 'Task: Scan code and dependencies for known vulnerabilities (CVEs).'
-                echo 'Tools: OWASP Dependency-Check and Snyk'
+                echo 'Task: Scan code for security vulnerabilities'
+                echo 'Tool: OWASP Dependency-Check'
+            }
+            post {
+                always {
+                    emailext(
+                        to: "${EMAIL}",
+                        subject: "Security Scan: ${currentBuild.currentResult}",
+                        body: "The Security Scan stage finished with status: ${currentBuild.currentResult}. Log attached.",
+                        attachLog: true
+                    )
+                }
             }
         }
         stage('Deploy to Staging') {
             steps {
-                echo 'Task: Deploy the application to the staging server (AWS EC2 staging instance).'
-                echo 'Tool: AWS CodeDeploy (alternative: Ansible)'
+                echo 'Task: Deploy application to staging server'
+                echo 'Tool: AWS EC2 instance (via AWS CLI)'
             }
         }
         stage('Integration Tests on Staging') {
             steps {
-                echo 'Task: Run API and end-to-end tests on staging to confirm it works in a production-like environment.'
-                echo 'Tools: Postman/Newman (API) and Selenium WebDriver (UI)'
+                echo 'Task: Run integration tests in the staging environment'
+                echo 'Tool: Selenium / Postman'
             }
         }
         stage('Deploy to Production') {
             steps {
-                echo 'Task: Release the verified build to the production server (AWS EC2 production instance).'
-                echo 'Tool: AWS CodeDeploy using blue/green deployment'
+                echo 'Task: Deploy application to production server'
+                echo 'Tool: AWS EC2 instance (via AWS CLI)'
             }
         }
-    }
-
-    post {
-        success { echo 'Pipeline completed successfully.' }
-        failure { echo 'Pipeline failed - check the stage logs above.' }
     }
 }
