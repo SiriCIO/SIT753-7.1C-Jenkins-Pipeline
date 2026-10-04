@@ -4,7 +4,7 @@ pipeline {
         pollSCM('H/5 * * * *')
     }
     environment {
-        EMAIL = 'lingalasiri04@gmail.com'
+        EMAIL = 's226112421@deakin.edu.au'
     }
     stages {
         stage('Build') {
